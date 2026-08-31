@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sampleapp-deployment
+  labels:
+    app: sampleapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sampleapp
+  template:
+    metadata:
+      labels:
+        app: sampleapp
+    spec:
+      containers:
+        - name: sampleapp
+          image: eograk/sampleapp:latest
+          ports:
+            - containerPort: 8080
