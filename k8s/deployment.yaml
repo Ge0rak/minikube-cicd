@@ -17,5 +17,6 @@ spec:
       containers:
         - name: sampleapp
           image: eograk/sampleapp:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
