@@ -1,2 +1,4 @@
-bin/
-obj/
+SampleApp/bin/
+SampleApp/obj/
+*.tar.gz
+minikube-linux-amd64
