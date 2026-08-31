@@ -3,9 +3,6 @@ trigger:
     include:
       - main
 
-pool:
-  vmImage: 'ubuntu-latest'
-
 variables:
   buildConfiguration: 'Release'
   projectPath: 'SampleApp/SampleApp.csproj'
@@ -13,33 +10,53 @@ variables:
   imageRepository: 'eograk/sampleapp'
   tag: '$(Build.BuildId)'
 
-steps:
-  - task: UseDotNet@2
-    displayName: 'Install .NET SDK'
-    inputs:
-      packageType: 'sdk'
-      version: '10.0.x'
+stages:
+  - stage: BuildAndPush
+    displayName: 'Build and Push'
+    pool:
+      vmImage: 'ubuntu-latest'
+    jobs:
+      - job: Build
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '10.0.x'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Restore dependencies'
-    inputs:
-      command: 'restore'
-      projects: '$(projectPath)'
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore dependencies'
+            inputs:
+              command: 'restore'
+              projects: '$(projectPath)'
 
-  - task: DotNetCoreCLI@2
-    displayName: 'Build'
-    inputs:
-      command: 'build'
-      projects: '$(projectPath)'
-      arguments: '--configuration $(buildConfiguration)'
+          - task: DotNetCoreCLI@2
+            displayName: 'Build'
+            inputs:
+              command: 'build'
+              projects: '$(projectPath)'
+              arguments: '--configuration $(buildConfiguration)'
 
-  - task: Docker@2
-    displayName: 'Build and push Docker image'
-    inputs:
-      containerRegistry: '$(dockerRegistryServiceConnection)'
-      repository: '$(imageRepository)'
-      command: 'buildAndPush'
-      Dockerfile: '**/Dockerfile'
-      tags: |
-        $(tag)
-        latest
+          - task: Docker@2
+            displayName: 'Build and push Docker image'
+            inputs:
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '$(imageRepository)'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                $(tag)
+                latest
+
+  - stage: Deploy
+    displayName: 'Deploy to Minikube'
+    dependsOn: BuildAndPush
+    pool: 'Default'
+    jobs:
+      - job: DeployToK8s
+        steps:
+          - script: |
+              kubectl apply -f k8s/deployment.yaml
+              kubectl apply -f k8s/service.yaml
+              kubectl rollout status deployment/sampleapp-deployment
+            displayName: 'kubectl apply and verify rollout'
