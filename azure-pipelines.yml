@@ -37,6 +37,12 @@ stages:
               projects: '$(projectPath)'
               arguments: '--configuration $(buildConfiguration)'
 
+          - task: DotNetCoreCLI@2
+            displayName: 'Run tests'
+            inputs:
+              command: 'test'
+              projects: 'SampleApp.Tests/SampleApp.Tests.csproj'
+
           - task: Docker@2
             displayName: 'Build and push Docker image'
             inputs:
